@@ -6,7 +6,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background-color: #f4f4f4;
       margin: 0;
       padding: 0;
     }
@@ -24,6 +24,20 @@
 
     .info {
       margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    .warning {
+      color: #b30000;
+      font-weight: bold;
+    }
+
+    .chat-placeholder {
+      background-color: #fff;
+      border: 1px dashed #ccc;
+      padding: 20px;
+      text-align: center;
+      color: #555;
     }
   </style>
 </head>
@@ -34,9 +48,11 @@
   </header>
 
   <div id="chatContainer">
-    <div class="info" id="info"></div>
-    <!-- Aqui você pode adicionar chat real futuramente -->
-    <p>⚠️ O chat ainda não foi implementado. Você está conectado com outro usuário.</p>
+    <div class="info" id="info">Carregando dados da conversa...</div>
+    <div class="chat-placeholder">
+      ⚠️ O chat ainda não foi implementado.<br>
+      Você está conectado com outro usuário.
+    </div>
   </div>
 
   <!-- Firebase SDKs -->
@@ -57,14 +73,14 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+
     const infoDiv = document.getElementById('info');
-
     const params = new URLSearchParams(window.location.search);
-    const toId = params.get('to');
     const fromId = params.get('from');
+    const toId = params.get('to');
 
-    if (!toId || !fromId) {
-      infoDiv.innerHTML = "<p style='color: red;'>IDs de conversa ausentes na URL.</p>";
+    if (!fromId || !toId) {
+      infoDiv.innerHTML = "<p class='warning'>❌ IDs de conversa ausentes na URL. Adicione ?from=seuID&to=destinoID</p>";
     } else {
       auth.onAuthStateChanged(user => {
         if (!user || user.uid !== fromId) {
@@ -72,22 +88,21 @@
           return;
         }
 
-        // Busca nomes dos usuários
         Promise.all([
-          db.ref('users/' + fromId + '/username').once('value'),
-          db.ref('users/' + toId + '/username').once('value')
+          db.ref(`users/${fromId}/username`).once('value'),
+          db.ref(`users/${toId}/username`).once('value')
         ])
         .then(([fromSnap, toSnap]) => {
           const fromUsername = fromSnap.val() || 'Você';
           const toUsername = toSnap.val() || 'Usuário';
 
           infoDiv.innerHTML = `
-            <p><strong>${fromUsername}</strong> está conversando com <strong>${toUsername}</strong>.</p>
+            👤 <strong>${fromUsername}</strong> está conversando com 👤 <strong>${toUsername}</strong>.
           `;
         })
-        .catch(err => {
-          console.error("Erro ao carregar usuários:", err);
-          infoDiv.innerHTML = "<p style='color: red;'>Erro ao carregar nomes de usuários.</p>";
+        .catch(error => {
+          console.error("Erro ao buscar usuários:", error);
+          infoDiv.innerHTML = "<p class='warning'>Erro ao carregar nomes de usuários.</p>";
         });
       });
     }
