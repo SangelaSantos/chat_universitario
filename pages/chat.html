@@ -1,229 +1,96 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Chat Anônimo - Lista de Contatos</title>
+  <meta charset="UTF-8">
+  <title>Conversa</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin:0; padding:0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
       background: #f4f4f4;
+      margin: 0;
+      padding: 0;
     }
-    #contacts, #chat {
-      flex: 1;
-      overflow-y: auto;
-      background: white;
+
+    header {
+      background-color: #0A275C;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    #chatContainer {
       padding: 20px;
-      display: none;
     }
-    #contacts.active, #chat.active {
-      display: block;
-    }
-    .contact-item {
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
-      cursor: pointer;
-    }
-    .contact-item:hover {
-      background: #0A275C;
-      color: white;
-    }
-    #messages {
-      max-height: 70vh;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-    .message {
-      background: #0A275C;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      max-width: 70%;
-    }
-    .message.you {
-      background: #1a73e8;
-      align-self: flex-end;
-    }
-    form {
-      display: flex;
-    }
-    input[type=text] {
-      flex: 1;
-      padding: 10px;
-      border-radius: 5px 0 0 5px;
-      border: 1px solid #ccc;
-      border-right: none;
-    }
-    button {
-      padding: 10px 20px;
-      border: none;
-      background: #0A275C;
-      color: white;
-      border-radius: 0 5px 5px 0;
-      cursor: pointer;
+
+    .info {
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
 
-  <h2 style="padding: 10px; background: #0A275C; color:white;">Chat Anônimo</h2>
+  <header>
+    <h2>Conversa</h2>
+  </header>
 
-  <div id="contacts" class="active">
-    <h3>Contatos com quem você já conversou</h3>
-    <div id="contactsList"></div>
-    <button id="addContactBtn">Conversar com novo usuário</button>
-  </div>
-
-  <div id="chat">
-    <button id="backBtn">← Voltar</button>
-    <h3 id="contactName"></h3>
-    <div id="messages"></div>
-    <form id="chatForm">
-      <input type="text" id="messageInput" placeholder="Digite sua mensagem..." autocomplete="off" required />
-      <button type="submit">Enviar</button>
-    </form>
+  <div id="chatContainer">
+    <div class="info" id="info"></div>
+    <!-- Aqui você pode adicionar chat real futuramente -->
+    <p>⚠️ O chat ainda não foi implementado. Você está conectado com outro usuário.</p>
   </div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    // Config Firebase - substitua pelos seus dados
     const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "SEU_AUTH_DOMAIN",
-      databaseURL: "SEU_DATABASE_URL",
-      projectId: "SEU_PROJECT_ID",
-      storageBucket: "SEU_STORAGE_BUCKET",
-      messagingSenderId: "SEU_SENDER_ID",
-      appId: "SEU_APP_ID"
+      apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+      authDomain: "alocalouro.firebaseapp.com",
+      projectId: "alocalouro",
+      storageBucket: "alocalouro.appspot.com",
+      messagingSenderId: "186368562877",
+      appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
     };
 
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
+    const infoDiv = document.getElementById('info');
 
-    // Simulação de ID do usuário atual (em app real use autenticação)
-    const currentUserId = 'user_123'; // altere conforme desejar
+    const params = new URLSearchParams(window.location.search);
+    const toId = params.get('to');
+    const fromId = params.get('from');
 
-    const contactsEl = document.getElementById('contacts');
-    const contactsListEl = document.getElementById('contactsList');
-    const addContactBtn = document.getElementById('addContactBtn');
-
-    const chatEl = document.getElementById('chat');
-    const contactNameEl = document.getElementById('contactName');
-    const messagesEl = document.getElementById('messages');
-    const chatForm = document.getElementById('chatForm');
-    const messageInput = document.getElementById('messageInput');
-    const backBtn = document.getElementById('backBtn');
-
-    let currentContactId = null;
-
-    // Função para mostrar contatos
-    function loadContacts() {
-      db.ref(`users/${currentUserId}/contacts`).on('value', snapshot => {
-        const contacts = snapshot.val();
-        contactsListEl.innerHTML = '';
-        if (!contacts) {
-          contactsListEl.innerHTML = '<p>Você ainda não conversou com ninguém.</p>';
+    if (!toId || !fromId) {
+      infoDiv.innerHTML = "<p style='color: red;'>IDs de conversa ausentes na URL.</p>";
+    } else {
+      auth.onAuthStateChanged(user => {
+        if (!user || user.uid !== fromId) {
+          window.location.href = "/login.html";
           return;
         }
-        Object.keys(contacts).forEach(contactId => {
-          const div = document.createElement('div');
-          div.className = 'contact-item';
-          div.textContent = contactId;
-          div.onclick = () => openChat(contactId);
-          contactsListEl.appendChild(div);
+
+        // Busca nomes dos usuários
+        Promise.all([
+          db.ref('users/' + fromId + '/username').once('value'),
+          db.ref('users/' + toId + '/username').once('value')
+        ])
+        .then(([fromSnap, toSnap]) => {
+          const fromUsername = fromSnap.val() || 'Você';
+          const toUsername = toSnap.val() || 'Usuário';
+
+          infoDiv.innerHTML = `
+            <p><strong>${fromUsername}</strong> está conversando com <strong>${toUsername}</strong>.</p>
+          `;
+        })
+        .catch(err => {
+          console.error("Erro ao carregar usuários:", err);
+          infoDiv.innerHTML = "<p style='color: red;'>Erro ao carregar nomes de usuários.</p>";
         });
       });
     }
-
-    // Abrir chat com contato
-    function openChat(contactId) {
-      currentContactId = contactId;
-      contactNameEl.textContent = contactId;
-      contactsEl.classList.remove('active');
-      chatEl.classList.add('active');
-      loadMessages();
-    }
-
-    // Voltar para lista de contatos
-    backBtn.addEventListener('click', () => {
-      currentContactId = null;
-      chatEl.classList.remove('active');
-      contactsEl.classList.add('active');
-      messagesEl.innerHTML = '';
-    });
-
-    // Enviar mensagem
-    chatForm.addEventListener('submit', e => {
-      e.preventDefault();
-      const text = messageInput.value.trim();
-      if (!text || !currentContactId) return;
-
-      const timestamp = Date.now();
-
-      const messageData = {
-        text,
-        sender: currentUserId,
-        timestamp
-      };
-
-      // Salva a mensagem para o usuário atual e para o contato (duplicando para facilitar leitura)
-      const updates = {};
-      updates[`users/${currentUserId}/conversations/${currentContactId}/${timestamp}`] = messageData;
-      updates[`users/${currentContactId}/conversations/${currentUserId}/${timestamp}`] = messageData;
-
-      // Adiciona contato na lista de ambos (se ainda não tiver)
-      updates[`users/${currentUserId}/contacts/${currentContactId}`] = true;
-      updates[`users/${currentContactId}/contacts/${currentUserId}`] = true;
-
-      db.ref().update(updates);
-
-      messageInput.value = '';
-    });
-
-    // Carregar mensagens da conversa atual, filtrando para últimas 7 dias
-    function loadMessages() {
-      messagesEl.innerHTML = '';
-      if (!currentContactId) return;
-
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-
-      db.ref(`users/${currentUserId}/conversations/${currentContactId}`)
-        .orderByChild('timestamp')
-        .startAt(sevenDaysAgo)
-        .on('value', snapshot => {
-          messagesEl.innerHTML = '';
-          const messages = snapshot.val();
-          if (!messages) return;
-          Object.values(messages).forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'message';
-            if (msg.sender === currentUserId) div.classList.add('you');
-            div.textContent = (msg.sender === currentUserId ? "Você: " : "Contato: ") + msg.text;
-            messagesEl.appendChild(div);
-          });
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-        });
-    }
-
-    // Botão para adicionar contato novo (simples prompt)
-    addContactBtn.addEventListener('click', () => {
-      const newContactId = prompt("Digite o ID do usuário para conversar:");
-      if (newContactId && newContactId !== currentUserId) {
-        openChat(newContactId);
-      } else {
-        alert('ID inválido');
-      }
-    });
-
-    // Inicializa contatos
-    loadContacts();
   </script>
 
 </body>

@@ -2,7 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Chat Anônimo</title>
+  <title>Página do Usuário</title>
+  <link rel="stylesheet" href="../style/style.css">
+  <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,109 +15,139 @@
       margin: 0;
       padding: 0;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
     }
 
-    #chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
+    .container {
       background-color: white;
-      border-bottom: 1px solid #ccc;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 320px;
     }
 
-    .message {
-      background: #0A275C;
-      color: white;
-      padding: 10px;
+    h2 {
       margin-bottom: 10px;
-      border-radius: 5px;
-      max-width: 60%;
+      color: #0A275C;
     }
 
-    form {
-      display: flex;
-      padding: 10px;
-      background: #fff;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
+    p {
+      font-size: 18px;
+      margin-bottom: 30px;
     }
 
     button {
-      padding: 10px 15px;
-      background-color: #0A275C;
+      padding: 10px 20px;
+      background-color: #c0392b;
       color: white;
       border: none;
       border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e74c3c;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
     }
   </style>
 </head>
 <body>
+    <!-- CABEÇALHO -->
+    <header class="header-inicio">
+    <img src="../img/logo.png" alt="Logo" class="img-logo">
 
-  <div id="chat"></div>
-
-  <form id="chatForm">
-    <input type="text" id="messageInput" placeholder="Digite sua mensagem..." required />
-    <button type="submit">Enviar</button>
-  </form>
+    <div class="nav-icons">
+      <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
+      <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
+      <a href="/pages/user.html"><i class="uil uil-user"></i></a>
+    </div>
+  </header>
+  <div class="container">
+    <h2>Olá, <span id="username">usuário</span>!</h2>
+    <p>Esta é sua conta. Você pode excluí-la se quiser.</p>
+    <button id="deleteAccountBtn">Desativar Conta</button>
+    <p id="message"></p>
+  </div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
-    authDomain: "alocalouro.firebaseapp.com",
-    projectId: "alocalouro",
-    storageBucket: "alocalouro.firebasestorage.app",
-    messagingSenderId: "186368562877",
-    appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+  <script>
+    // Configuração Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+      authDomain: "alocalouro.firebaseapp.com",
+      projectId: "alocalouro",
+      storageBucket: "alocalouro.appspot.com",
+      messagingSenderId: "186368562877",
+      appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+    };
 
     // Inicializa Firebase
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
-    const chat = document.getElementById('chat');
-    const form = document.getElementById('chatForm');
-    const input = document.getElementById('messageInput');
+    const usernameSpan = document.getElementById('username');
+    const deleteBtn = document.getElementById('deleteAccountBtn');
+    const message = document.getElementById('message');
 
-    // Envia mensagem
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const message = input.value.trim();
-      if (message !== '') {
-        const timestamp = Date.now();
-        db.ref('messages/' + timestamp).set({
-          text: message,
-          time: timestamp
+    // Checa se usuário está logado
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        const uid = user.uid;
+
+        // Busca o username no banco
+        db.ref('users/' + uid + '/username').once('value')
+          .then(snapshot => {
+            const username = snapshot.val();
+            usernameSpan.textContent = username || "usuário sem nome";
+          })
+          .catch(() => {
+            usernameSpan.textContent = "erro ao carregar nome";
+          });
+
+        // Ação para deletar a conta
+        deleteBtn.addEventListener('click', () => {
+          if (confirm("Tem certeza que deseja desativar sua conta?")) {
+            // Remove dados do banco
+            db.ref('users/' + uid).remove()
+              .then(() => {
+                // Remove conta do Auth
+                return user.delete();
+              })
+              .then(() => {
+                message.textContent = "Conta desativada com sucesso.";
+                message.className = "success";
+                setTimeout(() => {
+                  window.location.href = "/"; 
+                }, 2000);
+              })
+              .catch(error => {
+                message.textContent = "Erro ao desativar conta: " + error.message;
+                message.className = "error";
+              });
+          }
         });
-        input.value = '';
+
+      } else {
+        // Se não estiver logado, redireciona
+        window.location.href = "/login.html";
       }
     });
-
-    // Escuta novas mensagens
-    db.ref('messages').on('child_added', (snapshot) => {
-      const data = snapshot.val();
-      const msgEl = document.createElement('div');
-      msgEl.classList.add('message');
-      msgEl.textContent = data.text;
-      chat.appendChild(msgEl);
-      chat.scrollTop = chat.scrollHeight;
-    });
   </script>
+
 </body>
 </html>

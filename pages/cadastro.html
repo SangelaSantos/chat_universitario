@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="../style/style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <title>Cadastro Firebase - Email e Senha</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #0A275C;
+            margin-bottom: 20px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #0A275C;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #09406b;
+        }
+
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #message.error {
+            color: red;
+        }
+
+        #message.success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+   
+    <!-- <header class="header-inicio">
+    <img src="../img/logo.png" alt="Logo" class="img-logo">
+
+    <div class="nav-icons">
+        <a href="/pages/home.html"><i class="uil uil-home"></i></a>
+      <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
+      <a href="/pages/user.html"><i class="uil uil-user"></i></a>
+    </div>
+  </header> -->
+    <div class="container">
+        <h2>Cadastrar Conta</h2>
+        <input type="email" id="email" placeholder="Digite seu email" required />
+        <input type="password" id="password" placeholder="Digite sua senha" required minlength="6" />
+        <button id="registerBtn">Cadastrar</button>
+        <div id="message"></div>
+    </div>
+
+     <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+    authDomain: "alocalouro.firebaseapp.com",
+    projectId: "alocalouro",
+    storageBucket: "alocalouro.firebasestorage.app",
+    messagingSenderId: "186368562877",
+    appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+  };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const registerBtn = document.getElementById('registerBtn');
+    const messageDiv = document.getElementById('message');
+
+    registerBtn.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      messageDiv.textContent = '';
+      messageDiv.className = '';
+
+      if (!email) {
+        showMessage('Email é obrigatório', true);
+        return;
+      }
+      if (password.length < 6) {
+        showMessage('Senha deve ter pelo menos 6 caracteres', true);
+        return;
+      }
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          const user = userCredential.user;
+          const username = generateRandomUsername();
+
+          database.ref('users/' + user.uid).set({
+            username: username,
+            email: user.email
+          }).then(() => {
+            showMessage('Cadastro realizado com sucesso!', false);
+            emailInput.value = '';
+            passwordInput.value = '';
+
+            setTimeout(() => {
+              window.location.href = '/pages/home.html';
+            }, 1000);
+          }).catch(error => {
+            showMessage('Erro ao salvar dados: ' + error.message, true);
+          });
+        })
+        .catch(error => {
+          showMessage('Erro: ' + error.message, true);
+        });
+    });
+
+    function generateRandomUsername() {
+      const adjectives = ['blue', 'fast', 'happy', 'crazy', 'silent'];
+      const animals = ['tiger', 'elephant', 'rabbit', 'eagle', 'wolf'];
+      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const animal = animals[Math.floor(Math.random() * animals.length)];
+      const number = Math.floor(Math.random() * 1000);
+      return adj + '_' + animal + number;
+    }
+
+    function showMessage(msg, isError) {
+      messageDiv.textContent = msg;
+      messageDiv.className = isError ? 'error' : 'success';
+    }
+  </script>
+</body>
+
+</html>
