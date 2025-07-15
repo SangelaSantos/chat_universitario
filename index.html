@@ -1,33 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
-    <title>Document</title>
-    <link rel="stylesheet" href="./style/style.css">
+  <meta charset="UTF-8" />
+  <title>Login Firebase</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 300px;
+    }
+    h2 {
+      text-align: center;
+      color: #0A275C;
+      margin-bottom: 20px;
+    }
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #0A275C;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #09406b;
+    }
+    #message {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+    #message.error {
+      color: red;
+    }
+  </style>
 </head>
-
 <body>
-    <!-- CABEÇALHO -->
-    <header class="header-inicio">
-    <img src="./img/logo.png" alt="Logo" class="img-logo">
+  <div class="container">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Digite seu email" required />
+    <input type="password" id="password" placeholder="Digite sua senha" required />
+    <button id="loginBtn">Entrar</button>
+    <div id="message"></div>
+    <a href="/pages/cadastro.html">Cadastre-se</a>
+  </div>
 
-    <div class="nav-icons">
-      <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
-      <a href="/pages/user.html"><i class="uil uil-user"></i></a>
-    </div>
-  </header>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-    <section class="posts-container" id="posts-container">
-    </section>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+    authDomain: "alocalouro.firebaseapp.com",
+    projectId: "alocalouro",
+    storageBucket: "alocalouro.firebasestorage.app",
+    messagingSenderId: "186368562877",
+    appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+  };
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const messageDiv = document.getElementById('message');
+
+    loginBtn.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      messageDiv.textContent = '';
+      messageDiv.className = '';
+
+      if (!email) {
+        showMessage('Email é obrigatório', true);
+        return;
+      }
+      if (!password) {
+        showMessage('Senha é obrigatória', true);
+        return;
+      }
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          //showMessage('Login realizado com sucesso!', false);
+          // Redireciona para página principal do app/chat
+          setTimeout(() => {
+            window.location.href = '/pages/home.html';
+          }, 1000);
+        })
+        .catch(error => {
+          showMessage('Erro: ' + error.message, true);
+        });
+    });
+
+    function showMessage(msg, isError) {
+      messageDiv.textContent = msg;
+      messageDiv.className = isError ? 'error' : '';
+    }
+  </script>
 </body>
-<script src="./js/main.js"></script>
 </html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Global</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    #chatContainer {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    #messages {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 5px;
+    }
+
+    .me {
+      background: #d1e7dd;
+      text-align: right;
+    }
+
+    .other {
+      background: #f8d7da;
+      text-align: left;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #0A275C;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0e3475;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="chatContainer">
+    <h2>💬 Chat Universal</h2>
+    <div id="messages">Carregando...</div>
+    <form id="messageForm">
+      <input type="text" id="messageInput" placeholder="Digite sua mensagem..." required />
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+      authDomain: "alocalouro.firebaseapp.com",
+      projectId: "alocalouro",
+      storageBucket: "alocalouro.appspot.com",
+      messagingSenderId: "186368562877",
+      appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const messagesDiv = document.getElementById('messages');
+    const form = document.getElementById('messageForm');
+    const input = document.getElementById('messageInput');
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      currentUser = user;
+
+      // Escutar mensagens em tempo real
+      const chatRef = db.ref('chat/messages');
+      chatRef.on('child_added', snapshot => {
+        const msg = snapshot.val();
+        const isMe = msg.senderId === user.uid;
+
+        const div = document.createElement('div');
+        div.className = 'message ' + (isMe ? 'me' : 'other');
+        div.textContent = (isMe ? 'Você' : msg.senderName || 'Outro') + ': ' + msg.text;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const text = input.value.trim();
+      if (!text || !currentUser) return;
+
+      const userRef = await db.ref('users/' + currentUser.uid + '/username').once('value');
+      const senderName = userRef.val() || 'Anônimo';
+
+      const msg = {
+        senderId: currentUser.uid,
+        senderName,
+        text,
+        timestamp: Date.now()
+      };
+
+      db.ref('chat/messages').push(msg).then(() => {
+        input.value = '';
+      }).catch(err => {
+        console.error('Erro ao enviar mensagem:', err);
+        alert('Erro ao enviar mensagem.');
+      });
+    });
+  </script>
+</body>
+</html>

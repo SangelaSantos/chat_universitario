@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar Post</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css" />
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    .header-inicio {
+      background-color: #0A275C;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+    }
+
+    .img-logo {
+      height: 40px;
+    }
+
+    .nav-icons a {
+      color: white;
+      font-size: 20px;
+      margin-left: 15px;
+      text-decoration: none;
+    }
+
+    .post-form {
+      padding: 20px;
+      background: white;
+      margin: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 10px;
+      font-family: "Poppins", sans-serif;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      resize: none;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #0A275C;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .success {
+      color: green;
+      margin-top: 10px;
+    }
+
+    .posts-container {
+      margin: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- CABEÇALHO -->
+  <header class="header-inicio">
+    <img src="../img/logo.png" alt="Logo" class="img-logo" />
+    <div class="nav-icons">
+      <a href="/pages/home.html"><i class="uil uil-home"></i></a>
+      <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
+      <a href="/pages/user.html"><i class="uil uil-user"></i></a>
+    </div>
+  </header>
+
+  <div class="post-form">
+    <h2>Criar Post</h2>
+    <textarea id="postText" placeholder="Escreva algo..."></textarea>
+    <button id="postBtn">Postar</button>
+    <div id="message"></div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+      authDomain: "alocalouro.firebaseapp.com",
+      projectId: "alocalouro",
+      storageBucket: "alocalouro.appspot.com",
+      messagingSenderId: "186368562877",
+      appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const postBtn = document.getElementById('postBtn');
+    const postText = document.getElementById('postText');
+    const messageDiv = document.getElementById('message');
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      postBtn.addEventListener('click', () => {
+        const text = postText.value.trim();
+        if (text === '') return;
+
+        // Buscar apelido do usuário (caso tenha)
+        db.ref('users/' + user.uid + '/username').once('value')
+          .then(snapshot => {
+            const username = snapshot.val() || 'Anônimo';
+            const timestamp = Date.now();
+
+            // Criar post
+            const newPostRef = db.ref('posts').push();
+            const postId = newPostRef.key;
+
+            const postData = {
+              text,
+              timestamp,
+              username,
+              userId: user.uid
+            };
+
+            // Atualizar em dois caminhos: /posts/ e /users/uid/posts/
+            const updates = {};
+            updates['/posts/' + postId] = postData;
+            updates['/users/' + user.uid + '/posts/' + postId] = true;
+
+            db.ref().update(updates)
+              .then(() => {
+                messageDiv.textContent = "Post enviado com sucesso!";
+                messageDiv.className = "success";
+                postText.value = '';
+              })
+              .catch(error => {
+                messageDiv.textContent = "Erro: " + error.message;
+              });
+          });
+      });
+    });
+  </script>
+</body>
+</html>
