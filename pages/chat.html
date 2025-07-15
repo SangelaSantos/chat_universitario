@@ -2,206 +2,219 @@
 <html lang="pt-BR">
 
 <head>
-    <link rel="stylesheet" href="/style/style.css">
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
-    <meta charset="UTF-8">
-    <title>Chat em tempo real</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <title>Chat em tempo real</title>
+  <link rel="stylesheet" href="/style/style.css">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
 
-        #chatContainer {
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-        }
+    #chatContainer {
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
 
-        .info {
-            margin-bottom: 10px;
-        }
+    .info {
+      margin-bottom: 10px;
+    }
 
-        #messages {
-            background: white;
-            padding: 15px;
-            border: 1px solid #ccc;
-            height: 300px;
-            overflow-y: scroll;
-            margin-bottom: 15px;
-        }
+    #messages {
+      background: white;
+      padding: 15px;
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: scroll;
+      margin-bottom: 15px;
+    }
 
-        .message {
-            margin-bottom: 10px;
-            padding: 5px;
-            border-radius: 5px;
-        }
+    .message {
+      margin-bottom: 10px;
+      padding: 5px;
+      border-radius: 5px;
+    }
 
-        .me {
-            background-color: #d1e7dd;
-            text-align: right;
-        }
+    .me {
+      background-color: #d1e7dd;
+      text-align: right;
+    }
 
-        .other {
-            background-color: #f8d7da;
-            text-align: left;
-        }
+    .other {
+      background-color: #f8d7da;
+      text-align: left;
+    }
 
-        #messageForm {
-            display: flex;
-            gap: 10px;
-        }
+    #messageForm {
+      display: flex;
+      gap: 10px;
+    }
 
-        #messageInput {
-            flex: 1;
-            padding: 8px;
-        }
+    #messageInput {
+      flex: 1;
+      padding: 8px;
+    }
 
-        button {
-            padding: 8px 16px;
-            background-color: #0A275C;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
+    button {
+      padding: 8px 16px;
+      background-color: #0A275C;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
 
-        button:hover {
-            background-color: #0e3475;
-        }
-    </style>
+    button:hover {
+      background-color: #0e3475;
+    }
+
+    .header-inicio {
+      background-color: #0A275C;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .img-logo {
+      height: 40px;
+    }
+
+    .nav-icons a {
+      color: white;
+      margin-left: 15px;
+      font-size: 22px;
+    }
+  </style>
 </head>
 
 <body>
 
-    <header class="header-inicio">
-        <img src="../img/logo.png" alt="Logo" class="img-logo">
-
-        <div class="nav-icons">
-            <a href="/pages/home.html"><i class="uil uil-home"></i></a>
-            <a href="/pages/post.html"><i class="uil uil-chat"></i></a>
-            <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
-            <a href="/pages/user.html"><i class="uil uil-user"></i></a>
-        </div>
-    </header>
-
-    <div id="chatContainer">
-        <div class="info" id="info">Carregando...</div>
-
-        <div id="messages"></div>
-
-        <form id="messageForm">
-            <input type="text" id="messageInput" placeholder="Digite uma mensagem..." required />
-            <button type="submit">Enviar</button>
-        </form>
+  <header class="header-inicio">
+    <img src="../img/logo.png" alt="Logo" class="img-logo">
+    <div class="nav-icons">
+      <a href="/pages/home.html"><i class="uil uil-home"></i></a>
+      <a href="/pages/post.html"><i class="uil uil-file-alt"></i></a>
+      <a href="/pages/chat.html"><i class="uil uil-chat"></i></a>
+      <a href="/pages/user.html"><i class="uil uil-user"></i></a>
     </div>
+  </header>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <div id="chatContainer">
+    <div class="info" id="info">Carregando...</div>
 
-   <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
-    authDomain: "alocalouro.firebaseapp.com",
-    projectId: "alocalouro",
-    storageBucket: "alocalouro.appspot.com",
-    messagingSenderId: "186368562877",
-    appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
-  };
+    <div id="messages"></div>
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
+    <form id="messageForm">
+      <input type="text" id="messageInput" placeholder="Digite uma mensagem..." required />
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
 
-  const params = new URLSearchParams(window.location.search);
-  const fromId = params.get('from');
-  const toId = params.get('to');
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  const infoDiv = document.getElementById('info');
-  const messagesDiv = document.getElementById('messages');
-  const messageForm = document.getElementById('messageForm');
-  const messageInput = document.getElementById('messageInput');
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+      authDomain: "alocalouro.firebaseapp.com",
+      projectId: "alocalouro",
+      storageBucket: "alocalouro.appspot.com",
+      messagingSenderId: "186368562877",
+      appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+    };
 
-  let fromUsername = 'Você';
-  let toUsername = 'Usuário';
-  let conversationPath = '';
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-  function generateConversationId(uid1, uid2) {
-    return [uid1, uid2].sort().join('_');
-  }
+    const params = new URLSearchParams(window.location.search);
+    const fromId = params.get('from');
+    const toId = params.get('to');
 
-  if (!fromId || !toId) {
-    infoDiv.innerHTML = "<p style='color:red'>❌ IDs ausentes na URL. Adicione ?from=seuID&to=outroID</p>";
-  } else {
-    auth.onAuthStateChanged(user => {
-      if (!user || user.uid !== fromId) {
-        window.location.href = "/login.html";
-        return;
-      }
+    const infoDiv = document.getElementById('info');
+    const messagesDiv = document.getElementById('messages');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
 
-      conversationPath = generateConversationId(fromId, toId);
+    let fromUsername = 'Você';
+    let toUsername = 'Usuário';
+    let conversationPath = '';
 
-      Promise.all([
-        db.ref('users/' + fromId + '/username').once('value'),
-        db.ref('users/' + toId + '/username').once('value')
-      ])
-        .then(([fromSnap, toSnap]) => {
-          fromUsername = fromSnap.val() || 'Você';
-          toUsername = toSnap.val() || 'Usuário';
-          infoDiv.innerHTML = `<strong>${fromUsername}</strong> está conversando com <strong>${toUsername}</strong>`;
-          listenForMessages();
-        })
-        .catch(err => {
-          infoDiv.innerHTML = "Erro ao carregar nomes.";
-          console.error(err);
-        });
-    });
-  }
+    function generateConversationId(uid1, uid2) {
+      return [uid1, uid2].sort().join('_');
+    }
 
-  function listenForMessages() {
-    const chatRef = db.ref('conversations/' + conversationPath + '/messages');
-    chatRef.on('child_added', snapshot => {
-      const msg = snapshot.val();
+    if (!fromId || !toId) {
+      infoDiv.innerHTML = "<p style='color:red'>❌ IDs ausentes na URL. Use ?from=seuID&to=destinatarioID</p>";
+    } else {
+      auth.onAuthStateChanged(user => {
+        if (!user) {
+          window.location.href = "/login.html";
+          return;
+        }
 
-      // Mostra só se for uma mensagem enviada ou recebida
-      if ((msg.senderId === fromId && msg.receiverId === toId) ||
-          (msg.senderId === toId && msg.receiverId === fromId)) {
-        const isMe = msg.senderId === fromId;
+        const currentUserId = user.uid;
+        conversationPath = generateConversationId(fromId, toId);
+
+        Promise.all([
+          db.ref('users/' + fromId + '/username').once('value'),
+          db.ref('users/' + toId + '/username').once('value')
+        ])
+          .then(([fromSnap, toSnap]) => {
+            fromUsername = fromSnap.val() || 'Você';
+            toUsername = toSnap.val() || 'Usuário';
+            infoDiv.innerHTML = `<strong>${fromUsername}</strong> está conversando com <strong>${toUsername}</strong>`;
+            listenForMessages(currentUserId);
+          })
+          .catch(err => {
+            infoDiv.innerHTML = "Erro ao carregar nomes.";
+            console.error(err);
+          });
+      });
+    }
+
+    function listenForMessages(currentUserId) {
+      const chatRef = db.ref('conversations/' + conversationPath + '/messages');
+      chatRef.on('child_added', snapshot => {
+        const msg = snapshot.val();
+        const isMe = msg.senderId === currentUserId;
+
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message ' + (isMe ? 'me' : 'other');
         messageDiv.textContent = `${isMe ? fromUsername : toUsername}: ${msg.text}`;
         messagesDiv.appendChild(messageDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }
-    });
-  }
-
-  messageForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = messageInput.value.trim();
-    if (text === '') return;
-
-    const newMsg = {
-      senderId: fromId,
-      receiverId: toId,
-      text,
-      timestamp: Date.now()
-    };
-
-    db.ref('conversations/' + conversationPath + '/messages').push(newMsg)
-      .then(() => {
-        messageInput.value = '';
-      })
-      .catch(err => {
-        alert("Erro ao enviar mensagem");
-        console.error(err);
       });
-  });
-</script>
+    }
 
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (text === '') return;
+
+      const newMsg = {
+        senderId: fromId,
+        receiverId: toId,
+        text,
+        timestamp: Date.now()
+      };
+
+      db.ref('conversations/' + conversationPath + '/messages').push(newMsg)
+        .then(() => {
+          messageInput.value = '';
+        })
+        .catch(err => {
+          alert("Erro ao enviar mensagem");
+          console.error(err);
+        });
+    });
+  </script>
 
 </body>
 
