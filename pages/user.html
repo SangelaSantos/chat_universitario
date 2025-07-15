@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Anônimo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background-color: white;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .message {
+      background: #0A275C;
+      color: white;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      max-width: 60%;
+    }
+
+    form {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #0A275C;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="chat"></div>
+
+  <form id="chatForm">
+    <input type="text" id="messageInput" placeholder="Digite sua mensagem..." required />
+    <button type="submit">Enviar</button>
+  </form>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
+    authDomain: "alocalouro.firebaseapp.com",
+    projectId: "alocalouro",
+    storageBucket: "alocalouro.firebasestorage.app",
+    messagingSenderId: "186368562877",
+    appId: "1:186368562877:web:d0ef2bc2fd01d1188e89d4"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('messageInput');
+
+    // Envia mensagem
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (message !== '') {
+        const timestamp = Date.now();
+        db.ref('messages/' + timestamp).set({
+          text: message,
+          time: timestamp
+        });
+        input.value = '';
+      }
+    });
+
+    // Escuta novas mensagens
+    db.ref('messages').on('child_added', (snapshot) => {
+      const data = snapshot.val();
+      const msgEl = document.createElement('div');
+      msgEl.classList.add('message');
+      msgEl.textContent = data.text;
+      chat.appendChild(msgEl);
+      chat.scrollTop = chat.scrollHeight;
+    });
+  </script>
+</body>
+</html>
