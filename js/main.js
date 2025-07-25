@@ -10,7 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Função para formatar timestamp
+// Formatar timestamp
 function formatDate(timestamp) {
   const date = new Date(timestamp);
   const agora = new Date();
@@ -26,7 +26,7 @@ function formatDate(timestamp) {
   return "agora mesmo";
 }
 
-// Carregar posts do Firebase
+// Carregar posts
 function loadPosts() {
   const container = document.getElementById('posts-container');
   db.ref('posts').orderByChild('timestamp').once('value')
@@ -39,6 +39,7 @@ function loadPosts() {
         return;
       }
 
+      // Ordenar por timestamp decrescente
       const sortedPosts = Object.entries(posts).sort((a, b) => b[1].timestamp - a[1].timestamp);
 
       sortedPosts.forEach(([id, post]) => {
@@ -56,13 +57,21 @@ function loadPosts() {
             <p>${post.text}</p>
           </div>
           <div class="post-actions">
-            <button class="like-btn">❤️ Curtir</button>
-            <button class="comment-btn">💬 Comentar</button>
+            <button class="like-btn" id="like-${id}" onclick="curtirPost('${id}', this)">❤️ Curtir</button>
+            <button class="comment-btn" onclick="comentarPost('${id}')">💬 Comentar</button>
             <button class="msg-btn" onclick="enviarMensagem('${post.userId}')">📩 Mensagem</button>
             <button class="ignore-btn" onclick="removerPost(this)">🚫 Não tenho interesse</button>
           </div>
+          <div class="comments-container" id="comments-${id}" style="margin-top:10px;"></div>
         `;
         container.appendChild(card);
+
+        // Atualiza o texto do botão Curtir com o número atual
+        const likeBtn = card.querySelector(`#like-${id}`);
+        contarCurtidas(id, likeBtn);
+
+        // Carrega comentários visíveis
+        carregarComentarios(id);
       });
     })
     .catch(error => {
@@ -71,11 +80,106 @@ function loadPosts() {
     });
 }
 
-// Função para remover post do DOM
-function removerPost(botao) {
-  const post = botao.closest('.post-card');
-  post.remove();
+// Curtir/descurtir post
+function curtirPost(postId, btn) {
+  const user = firebase.auth().currentUser;
+  if (!user) return alert("Você precisa estar logado para curtir.");
+
+  const likeRef = db.ref(`likes/${postId}/${user.uid}`);
+  likeRef.once('value').then(snapshot => {
+    if (snapshot.exists()) {
+      // Remover like
+      likeRef.remove().then(() => {
+        getLikeCount(postId).then(count => {
+          btn.textContent = `❤️ Curtir (${count})`;
+          btn.classList.remove('btn-curtido');
+          btn.classList.add('btn-nao-curtido');
+        });
+      });
+    } else {
+      // Adicionar like
+      likeRef.set(true).then(() => {
+        getLikeCount(postId).then(count => {
+          btn.textContent = `💔 Descurtir (${count})`;
+          btn.classList.remove('btn-nao-curtido');
+          btn.classList.add('btn-curtido');
+        });
+      });
+    }
+  });
 }
+
+
+// Função para pegar contagem de likes (Promise)
+function getLikeCount(postId) {
+  return db.ref(`likes/${postId}`).once('value').then(snapshot => snapshot.numChildren());
+}
+
+
+// Contar curtidas e atualizar botão
+function contarCurtidas(postId, btn) {
+  db.ref(`likes/${postId}`).on('value', snapshot => {
+    const total = snapshot.numChildren();
+    btn.textContent = `❤️ Curtir (${total})`;
+  });
+}
+
+
+// Comentar post (prompt simples)
+function comentarPost(postId) {
+  const user = firebase.auth().currentUser;
+  if (!user) return alert("Você precisa estar logado para comentar.");
+
+  const comentario = prompt("Digite seu comentário:");
+  if (!comentario) return;
+
+  const commentData = {
+    userId: user.uid,
+    text: comentario,
+    timestamp: Date.now()
+  };
+
+  db.ref(`comments/${postId}`).push(commentData)
+    .then(() => {
+      alert("Comentário enviado com sucesso!");
+      carregarComentarios(postId); // Atualiza lista de comentários
+    })
+    .catch(err => {
+      console.error("Erro ao comentar:", err);
+      alert("Erro ao comentar.");
+    });
+}
+
+// Carregar comentários de um post
+function carregarComentarios(postId) {
+  const container = document.getElementById(`comments-${postId}`);
+  if (!container) return;
+
+  db.ref(`comments/${postId}`).orderByChild('timestamp').once('value')
+    .then(snapshot => {
+      const comments = snapshot.val();
+      container.innerHTML = '';
+
+      if (!comments) {
+        container.innerHTML = '<small style="color:#666;">Sem comentários ainda.</small>';
+        return;
+      }
+
+      const sortedComments = Object.entries(comments).sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+      sortedComments.forEach(([cid, comment]) => {
+        const div = document.createElement('div');
+        div.style.borderTop = "1px solid #eee";
+        div.style.padding = "6px 0";
+        div.style.fontSize = "13px";
+        div.style.color = "#444";
+        div.textContent = comment.text;
+        container.appendChild(div);
+      });
+    });
+}
+
+// Enviar mensagem privada (redireciona)
 function enviarMensagem(userId) {
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
@@ -83,11 +187,23 @@ function enviarMensagem(userId) {
       return;
     }
     const remetenteId = user.uid;
-
-    // Redireciona para a página de contatos, passando os dois IDs
     window.location.href = `/pages/chat.html?from=${remetenteId}&to=${userId}`;
   });
 }
 
-// Carrega os posts ao iniciar
-loadPosts();
+// Remover post da interface (não do Firebase)
+function removerPost(botao) {
+  const post = botao.closest('.post-card');
+  post.remove();
+}
+
+// Inicializa
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    loadPosts();
+  } else {
+    // Se quiser redirecionar pra login automaticamente:
+    // window.location.href = "/login.html";
+    loadPosts(); // ou carregar posts sem interação de usuário
+  }
+});
