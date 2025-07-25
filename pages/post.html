@@ -1,47 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Criar Post</title>
+  <title>Alô, Calouro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css" />
+  <link rel="stylesheet" href="../style/style.css">
   <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
-    }
-
-    .header-inicio {
-      background-color: #0A275C;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
-    }
-
-    .img-logo {
-      height: 40px;
-    }
-
-    .nav-icons a {
-      color: white;
-      font-size: 20px;
-      margin-left: 15px;
-      text-decoration: none;
-    }
-
     .post-form {
       padding: 20px;
       background: white;
-      margin: 20px;
+      margin: 80px auto 20px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      width: 80%;
+      display: flex;
+      justify-items: center;
+      flex-direction: column;
     }
 
     textarea {
@@ -58,6 +37,7 @@
     button {
       margin-top: 10px;
       padding: 10px 15px;
+      width: 20%;
       background-color: #0A275C;
       color: white;
       border: none;
@@ -71,30 +51,101 @@
     }
 
     .posts-container {
-      margin: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 80%;
+      margin: 0 auto;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .post-created {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .post {
+      background: #f8f5f5;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .post p {
+      margin: 0 0 10px;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .post-actions button {
+      margin: 0 40px 0 40px;
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 5px;
+    }
+
+    .edit-btn {
+      background-color: #f3b712c5;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .save-btn {
+      background-color: #27ae60;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .header-inicio {
+        top: auto;
+        bottom: 0;
+        position: fixed;
+      }
     }
   </style>
 </head>
 
 <body>
   <!-- CABEÇALHO -->
-    <header class="header-inicio">
+  <header class="header-inicio">
     <img src="../img/logo.png" alt="Logo" class="img-logo">
-
     <div class="nav-icons">
       <a href="/pages/home.html"><i class="uil uil-home"></i></a>
       <a href="/pages/post.html"><i class="uil uil-plus"></i></a>
       <a href="/pages/universal.html"><i class="uil uil-chat"></i></a>
-      <a href="/pages/chat.html"><i class="uil uil-comment-alt-lock"></i></a>
       <a href="/pages/user.html"><i class="uil uil-user"></i></a>
     </div>
   </header>
 
+  <!-- CRIAR POST -->
   <div class="post-form">
     <h2>Criar Post</h2>
     <textarea id="postText" placeholder="Escreva algo..."></textarea>
     <button id="postBtn">Postar</button>
     <div id="message"></div>
+  </div>
+
+  <!-- POSTS DO USUÁRIO -->
+
+  <div class="posts-container">
+    <h2>Meus posts</h2>
+    <div class="post-created">
+      <div id="postsContainer"></div>
+    </div>
   </div>
 
   <!-- Firebase SDKs -->
@@ -103,7 +154,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    // Configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBCqMQbzWlEs4zKMXt9wINzJxD0xhZcYIg",
       authDomain: "alocalouro.firebaseapp.com",
@@ -120,6 +170,9 @@
     const postBtn = document.getElementById('postBtn');
     const postText = document.getElementById('postText');
     const messageDiv = document.getElementById('message');
+    const postsContainer = document.getElementById('postsContainer');
+
+    let currentUser;
 
     auth.onAuthStateChanged(user => {
       if (!user) {
@@ -127,17 +180,19 @@
         return;
       }
 
+      currentUser = user;
+
+      loadUserPosts();
+
       postBtn.addEventListener('click', () => {
         const text = postText.value.trim();
         if (text === '') return;
 
-        // Buscar apelido do usuário (caso tenha)
         db.ref('users/' + user.uid + '/username').once('value')
           .then(snapshot => {
             const username = snapshot.val() || 'Anônimo';
             const timestamp = Date.now();
 
-            // Criar post
             const newPostRef = db.ref('posts').push();
             const postId = newPostRef.key;
 
@@ -148,7 +203,6 @@
               userId: user.uid
             };
 
-            // Atualizar em dois caminhos: /posts/ e /users/uid/posts/
             const updates = {};
             updates['/posts/' + postId] = postData;
             updates['/users/' + user.uid + '/posts/' + postId] = true;
@@ -158,6 +212,7 @@
                 messageDiv.textContent = "Post enviado com sucesso!";
                 messageDiv.className = "success";
                 postText.value = '';
+                loadUserPosts();
               })
               .catch(error => {
                 messageDiv.textContent = "Erro: " + error.message;
@@ -165,6 +220,62 @@
           });
       });
     });
+
+    function loadUserPosts() {
+      postsContainer.innerHTML = '';
+      db.ref('posts').orderByChild('userId').equalTo(currentUser.uid).once('value')
+        .then(snapshot => {
+          if (!snapshot.exists()) {
+            postsContainer.innerHTML = '<p>Você ainda não criou nenhum post.</p>';
+            return;
+          }
+
+          snapshot.forEach(child => {
+            const post = child.val();
+            const postId = child.key;
+
+            const postDiv = document.createElement('div');
+            postDiv.className = 'post';
+            postDiv.innerHTML = `
+              <p contenteditable="false" class="post-text">${post.text}</p>
+              <div class="post-actions">
+                <button class="edit-btn">Editar</button>
+                <button class="delete-btn">Excluir</button>
+              </div>
+            `;
+
+            const editBtn = postDiv.querySelector('.edit-btn');
+            const deleteBtn = postDiv.querySelector('.delete-btn');
+            const postTextP = postDiv.querySelector('.post-text');
+
+            editBtn.addEventListener('click', () => {
+              if (editBtn.textContent === 'Editar') {
+                postTextP.contentEditable = true;
+                postTextP.focus();
+                editBtn.textContent = 'Salvar';
+                editBtn.className = 'save-btn';
+              } else {
+                postTextP.contentEditable = false;
+                const newText = postTextP.textContent.trim();
+                db.ref('posts/' + postId + '/text').set(newText);
+                editBtn.textContent = 'Editar';
+                editBtn.className = 'edit-btn';
+              }
+            });
+
+            deleteBtn.addEventListener('click', () => {
+              if (confirm('Tem certeza que deseja excluir este post?')) {
+                db.ref('posts/' + postId).remove();
+                db.ref('users/' + currentUser.uid + '/posts/' + postId).remove();
+                postDiv.remove();
+              }
+            });
+
+            postsContainer.appendChild(postDiv);
+          });
+        });
+    }
   </script>
 </body>
+
 </html>

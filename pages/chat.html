@@ -3,17 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Chat em tempo real</title>
+  <title>Alô, Calouro</title>
   <link rel="stylesheet" href="/style/style.css">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+  <link rel="stylesheet" href="../style/style.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 0;
-    }
-
     #chatContainer {
       padding: 20px;
       max-width: 600px;
@@ -88,12 +82,42 @@
       margin-left: 15px;
       font-size: 22px;
     }
+
+    @media (max-width: 600px) {
+  .header-inicio {
+    top: auto;
+    bottom: 0;
+    position: fixed;
+    width: 100%;
+    z-index: 10;
+  }
+
+  #chatContainer {
+    padding: 10px;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  #messageForm {
+    flex-direction: column;
+  }
+
+  #messageInput,
+  button {
+    width: 100%;
+  }
+
+  .nav-icons a {
+    font-size: 18px;
+    margin-left: 10px;
+  }
+}
   </style>
 </head>
 
 <body>
 
-    <header class="header-inicio">
+  <header class="header-inicio">
     <img src="../img/logo.png" alt="Logo" class="img-logo">
 
     <div class="nav-icons">
