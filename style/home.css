@@ -1,0 +1,149 @@
+.posts-container {
+display: flex;
+flex-direction: column;
+gap: 20px;
+max-width: 80%;
+margin: 0 auto;
+padding: 80px 20px;
+
+max-height: 95vh;
+/* define a altura visível */
+overflow-y: auto;
+/* ativa o scroll vertical */
+scroll-behavior: smooth;
+}
+
+
+.post-card {
+background-color: #ffffff;
+border-radius: 12px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+padding: 16px;
+}
+
+.post-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 12px;
+}
+
+.post-avatar {
+width: 50px;
+height: 50px;
+border-radius: 50%;
+object-fit: cover;
+}
+
+.post-header h3 {
+margin: 0;
+font-size: 16px;
+font-weight: 600;
+}
+
+.post-header p {
+margin: 2px 0 0;
+font-size: 13px;
+color: #666;
+}
+
+.post-content {
+margin-bottom: 12px;
+font-size: 15px;
+}
+
+.post-actions {
+display: flex;
+justify-content: space-between;
+gap: 10px;
+}
+
+.post-actions button {
+flex: 1;
+padding: 10px;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+font-size: 14px;
+font-weight: 500;
+transition: background 0.3s;
+}
+
+.like-btn {
+background-color: #fcefee;
+color: #d63031;
+}
+
+.like-btn:hover {
+background-color: #f8d6d6;
+}
+
+.comment-btn {
+background-color: #eef6fc;
+color: #0984e3;
+}
+
+.comment-btn:hover {
+background-color: #d6e9f8;
+}
+
+.msg-btn {
+background-color: #eaf6ef;
+color: #00b894;
+}
+
+.msg-btn:hover {
+background-color: #c8eedd;
+}
+
+.ignore-btn {
+background-color: #f5f5f5;
+color: #999;
+}
+
+.ignore-btn:hover {
+background-color: #e0e0e0;
+}
+
+.btn-curtido {
+background-color: #d66e78d0; 
+color: white;
+font-weight: bold;
+}
+
+.btn-nao-curtido {
+background-color: #fcefee;
+color: #333;
+}
+
+@media (max-width: 600px) {
+.post-actions button {
+    font-size: 0;
+    /* Esconde o texto */
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.post-actions button::before {
+    font-size: 18px;
+    margin: 0;
+}
+
+.like-btn::before {
+    content: "❤️";
+}
+
+.comment-btn::before {
+    content: "💬";
+}
+
+.msg-btn::before {
+    content: "📩";
+}
+
+.ignore-btn::before {
+    content: "🚫";
+}
+}
