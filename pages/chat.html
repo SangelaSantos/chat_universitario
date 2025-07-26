@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+  <link rel="stylesheet" href="../style/geral.css">
+  <link rel="stylesheet" href="../style/chat.css">
   <title>Alô, Calouro</title>
-  <link rel="stylesheet" href="../style/geral.css" />
-  <link rel="stylesheet" href="../style/chat.css" />
 </head>
 
 <body>
@@ -26,8 +26,14 @@
     </div>
   </header>
 
+  <div id="salaContainer" style="margin: 15px;">
+    <input type="text" id="salaInput" placeholder="Digite o ID da sala" style="padding: 8px; width: 200px;" />
+    <button onclick="entrarNaSala()" style="padding: 8px;">Entrar na Sala</button>
+  </div>
+
   <div id="chatContainer">
     <div class="info" id="info">Carregando conversas...</div>
+    <button id="voltarBtn" style="display:none; margin-bottom: 10px;">Voltar</button>
     <div id="messages"></div>
 
     <form id="messageForm" style="display: none;">
@@ -78,16 +84,11 @@
 
       currentUserId = user.uid;
 
-      // Caso tenha vindo de um link direto com ?from=...&to=...
       if (fromParam && toParam && currentUserId === fromParam) {
         const conversationId = [fromParam, toParam].sort().join('_');
-
-        // Cria a conversa se ainda não existir
         db.ref('conversations/' + conversationId).once('value').then(snapshot => {
           if (!snapshot.exists()) {
-            db.ref('conversations/' + conversationId).set({
-              createdAt: Date.now()
-            });
+            db.ref('conversations/' + conversationId).set({ createdAt: Date.now() });
           }
 
           db.ref('users/' + toParam + '/username').once('value').then(nameSnap => {
@@ -113,8 +114,15 @@
             const parts = convKey.split('_');
             const otherId = parts.find(id => id !== currentUserId);
 
-            db.ref('users/' + otherId + '/username').once('value').then(nameSnap => {
+            Promise.all([
+              db.ref('users/' + otherId + '/username').once('value'),
+              db.ref('conversations/' + convKey + '/messages').orderByChild('timestamp').limitToLast(1).once('value'),
+              db.ref(`leitura/${currentUserId}/${convKey}`).once('value')
+            ]).then(([nameSnap, msgSnap, leituraSnap]) => {
               const name = nameSnap.val() || 'Usuário';
+              const ultimaMensagem = Object.values(msgSnap.val() || {})[0];
+              const ultimaLeitura = leituraSnap.val() || 0;
+              const temMensagemNova = ultimaMensagem && ultimaMensagem.timestamp > ultimaLeitura;
 
               const convoDiv = document.createElement('div');
               convoDiv.className = 'message other';
@@ -122,6 +130,13 @@
               convoDiv.style.display = 'flex';
               convoDiv.style.justifyContent = 'space-between';
               convoDiv.style.alignItems = 'center';
+              convoDiv.style.padding = '10px';
+              convoDiv.style.marginBottom = '8px';
+
+              if (temMensagemNova) {
+                convoDiv.style.backgroundColor = '#d4edda';
+                convoDiv.style.borderLeft = '5px solid #28a745';
+              }
 
               const textSpan = document.createElement('span');
               textSpan.textContent = `🗨️ ${name}`;
@@ -167,10 +182,13 @@
       infoDiv.innerHTML = `<strong>Você está conversando com ${otherName}</strong>`;
       messagesDiv.innerHTML = '';
       messageForm.style.display = 'flex';
+      voltarBtn.style.display = 'inline-block';
 
       if (chatRefAtual) {
         chatRefAtual.off();
       }
+
+      db.ref(`leitura/${currentUserId}/${conversationPath}`).set(Date.now());
 
       chatRefAtual = db.ref('conversations/' + conversationPath + '/messages');
       chatRefAtual.on('child_added', snapshot => {
@@ -223,6 +241,34 @@
           });
       }
     }
+
+    function entrarNaSala() {
+      const salaId = document.getElementById("salaInput").value.trim();
+      if (salaId) {
+        window.location.href = `/pages/chat.html?from=${currentUserId}&to=${salaId}`;
+      }
+    }
+
+    const voltarBtn = document.getElementById('voltarBtn');
+
+    voltarBtn.addEventListener('click', () => {
+      if (chatRefAtual) {
+        chatRefAtual.off(); // parar de escutar a conversa
+        chatRefAtual = null;
+      }
+
+      currentConversation = null;
+      currentOtherId = null;
+      currentOtherName = 'Usuário';
+
+      infoDiv.innerHTML = "<strong>Minhas conversas:</strong>";
+      messagesDiv.innerHTML = '';
+      messageForm.style.display = 'none';
+      voltarBtn.style.display = 'none';
+
+      carregarConversas();
+    });
+
   </script>
 </body>
 
