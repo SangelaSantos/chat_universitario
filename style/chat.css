@@ -91,4 +91,15 @@ button:hover {
     button {
     width: 100%;
     }
+    .message {
+    align-items: stretch;
+  }
+
+  .message button {
+    width: 20%;
+  }
+
+  .message span {
+    text-align: center;
+  }
 }
