@@ -10,6 +10,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+
+////////// HOME ///////////////////////
 // Formatar timestamp
 function formatDate(timestamp) {
   const date = new Date(timestamp);
@@ -190,6 +192,8 @@ function enviarMensagem(userId) {
     window.location.href = `/pages/chat.html?from=${remetenteId}&to=${userId}`;
   });
 }
+
+
 
 // Remover post da interface (não do Firebase)
 function removerPost(botao) {

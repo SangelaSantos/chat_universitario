@@ -2,96 +2,21 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
   <title>Alô, Calouro</title>
-  <link rel="stylesheet" href="../style/style.css">
-  <style>
-    #chatContainer {
-      padding: 20px;
-      max-width: 600px;
-      margin: 60px auto;
-    }
-
-    .info {
-      margin-bottom: 10px;
-    }
-
-    #messages {
-      background: white;
-      padding: 15px;
-      border: 1px solid #ccc;
-      height: 300px;
-      overflow-y: scroll;
-      margin-bottom: 15px;
-    }
-
-    .message {
-      margin-bottom: 10px;
-      padding: 5px;
-      border-radius: 5px;
-    }
-
-    .me {
-      background-color: #d1e7dd;
-      text-align: right;
-    }
-
-    .other {
-      background-color: #ccc;
-      text-align: left;
-    }
-
-    #messageForm {
-      display: flex;
-      gap: 10px;
-    }
-
-    #messageInput {
-      flex: 1;
-      padding: 8px;
-    }
-
-    button {
-      padding: 8px 16px;
-      background-color: #0A275C;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0e3475;
-    }
-
-    @media (max-width: 600px) {
-      #chatContainer {
-        margin-top: 20px;
-      }
-
-      form {
-        flex-direction: column;
-      }
-
-      input,
-      button {
-        width: 100%;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="../style/geral.css" />
+  <link rel="stylesheet" href="../style/chat.css" />
 </head>
 
 <body>
 
   <header class="header-inicio">
     <img src="../img/logo.png" alt="Logo" class="img-logo">
-
     <div class="nav-icons">
       <a href="/pages/home.html"><i class="uil uil-home"></i></a>
       <a href="/pages/post.html"><i class="uil uil-plus"></i></a>
@@ -139,6 +64,11 @@
     let currentConversation = null;
     let currentOtherId = null;
     let currentOtherName = 'Usuário';
+    let chatRefAtual = null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromParam = urlParams.get('from');
+    const toParam = urlParams.get('to');
 
     auth.onAuthStateChanged(user => {
       if (!user) {
@@ -147,7 +77,27 @@
       }
 
       currentUserId = user.uid;
-      carregarConversas();
+
+      // Caso tenha vindo de um link direto com ?from=...&to=...
+      if (fromParam && toParam && currentUserId === fromParam) {
+        const conversationId = [fromParam, toParam].sort().join('_');
+
+        // Cria a conversa se ainda não existir
+        db.ref('conversations/' + conversationId).once('value').then(snapshot => {
+          if (!snapshot.exists()) {
+            db.ref('conversations/' + conversationId).set({
+              createdAt: Date.now()
+            });
+          }
+
+          db.ref('users/' + toParam + '/username').once('value').then(nameSnap => {
+            const nomeOutro = nameSnap.val() || 'Usuário';
+            abrirConversa(conversationId, toParam, nomeOutro);
+          });
+        });
+      } else {
+        carregarConversas();
+      }
     });
 
     function carregarConversas() {
@@ -169,13 +119,10 @@
               const convoDiv = document.createElement('div');
               convoDiv.className = 'message other';
               convoDiv.style.cursor = 'pointer';
-
-              // estilo para alinhar texto e botão
               convoDiv.style.display = 'flex';
               convoDiv.style.justifyContent = 'space-between';
               convoDiv.style.alignItems = 'center';
 
-              // conteúdo da conversa
               const textSpan = document.createElement('span');
               textSpan.textContent = `🗨️ ${name}`;
               textSpan.style.flex = '1';
@@ -185,8 +132,6 @@
                 abrirConversa(convKey, otherId, name);
               };
 
-
-              // botão de exclusão
               const excluirBtn = document.createElement('button');
               excluirBtn.textContent = '🗑️';
               excluirBtn.style.background = '#dc3545';
@@ -197,7 +142,6 @@
               excluirBtn.style.padding = '4px 10px';
               excluirBtn.style.marginLeft = '10px';
 
-              // impede conflito de clique com abrirConversa
               excluirBtn.onclick = (e) => {
                 e.stopPropagation();
                 excluirConversa(convKey, name);
@@ -205,7 +149,6 @@
 
               convoDiv.appendChild(excluirBtn);
               messagesDiv.appendChild(convoDiv);
-
             });
           }
         }
@@ -225,10 +168,12 @@
       messagesDiv.innerHTML = '';
       messageForm.style.display = 'flex';
 
-      const chatRef = db.ref('conversations/' + conversationPath + '/messages');
-      chatRef.off();
+      if (chatRefAtual) {
+        chatRefAtual.off();
+      }
 
-      chatRef.on('child_added', snapshot => {
+      chatRefAtual = db.ref('conversations/' + conversationPath + '/messages');
+      chatRefAtual.on('child_added', snapshot => {
         const msg = snapshot.val();
         const isMe = msg.senderId === currentUserId;
 
@@ -279,7 +224,6 @@
       }
     }
   </script>
-
 </body>
 
 </html>
